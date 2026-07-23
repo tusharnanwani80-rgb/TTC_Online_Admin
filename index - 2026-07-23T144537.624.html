@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTC Online Ledger</title>
+    
+    <!-- Premium Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #E2E8F0; color: #1E293B; }
+        
+        /* Productivity Theme Colors */
+        .bg-teal-dark { background-color: #1A3644; }
+        .text-teal-dark { color: #1A3644; }
+        .bg-peach-accent { background-color: #FFB075; }
+        .text-peach-accent { color: #FFB075; }
+        
+        /* Modern Floating Cards */
+        .card-modern { background: white; border-radius: 28px; box-shadow: 0 15px 35px -5px rgba(26,54,68,0.1); padding: 24px; position: relative; overflow: hidden; }
+        
+        /* Sleek Inputs & Buttons */
+        .input-sleek { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 14px 20px; font-weight: 500; transition: all 0.3s; width: 100%; color: #1E293B;}
+        .input-sleek:focus { border-color: #FFB075; outline: none; background-color: white; box-shadow: 0 0 0 4px rgba(255,176,117,0.15); }
+        
+        .btn-pill { border-radius: 99px; font-weight: 600; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+        .btn-pill:active { transform: scale(0.96); }
+        .btn-pill:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        /* Micro Progress Bar */
+        .bar-track { background-color: #F1F5F9; height: 8px; border-radius: 99px; overflow: hidden; width: 100%; }
+        .bar-fill { background-color: #1A3644; height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+
+        /* Smooth Modals */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(26,54,68,0.6); z-index: 50; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; opacity: 0; transition: opacity 0.2s ease;}
+        .modal-overlay.active { display: flex; opacity: 1; }
+        
+        .modal-content { background: white; border-radius: 32px; width: 100%; max-w: 500px; padding: 32px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); max-height: 90vh; overflow-y: auto; }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Header Area (Dark Teal) -->
+    <div class="bg-teal-dark pt-12 pb-24 px-6 md:px-12 rounded-b-[40px] shadow-xl relative z-0">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 bg-white rounded-[20px] p-1 shadow-lg transform rotate-3">
+                    <img src="https://iili.io/CHHuZ6g.md.png" alt="Logo" class="w-full h-full rounded-[16px] object-cover">
+                </div>
+                <div>
+                    <p class="text-peach-accent font-semibold text-sm mb-1">Total Control</p>
+                    <h1 class="text-3xl font-extrabold text-white tracking-tight">Online Ledger</h1>
+                </div>
+            </div>
+            
+            <button onclick="openModal('addStudentModal')" class="bg-peach-accent text-white hover:bg-[#F29F60] btn-pill py-3 px-8 shadow-lg shadow-orange-500/30 gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                New Student Profile
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Content -->
+    <div class="max-w-6xl mx-auto px-4 md:px-8 w-full -mt-16 z-10 pb-20">
+        <div id="loading" class="text-center p-12 bg-white rounded-3xl shadow-xl w-full max-w-md mx-auto mt-10">
+            <div class="w-12 h-12 border-4 border-peach-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="font-bold text-teal-dark text-lg">Syncing Database...</p>
+        </div>
+        
+        <div id="dashboard" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 hidden items-start"></div>
+    </div>
+
+    <!-- MODAL: ADD STUDENT -->
+    <div id="addStudentModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <div><h2 class="text-2xl font-extrabold text-teal-dark">New Student</h2></div>
+                <button onclick="closeModal('addStudentModal')" class="bg-gray-100 p-2 rounded-full hover:bg-gray-200 text-gray-500 transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <form onsubmit="submitAddStudent(event)" class="space-y-4">
+                <div><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Student Name</label><input type="text" id="as-name" required class="input-sleek mt-1" placeholder="e.g. Ayaan"></div>
+                <div><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Parent Name</label><input type="text" id="as-parent" required class="input-sleek mt-1" placeholder="e.g. Mr. Khan"></div>
+                <div><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Phone Number</label><input type="text" id="as-phone" required class="input-sleek mt-1" placeholder="Links siblings automatically"></div>
+                <div class="h-px bg-gray-100 w-full my-4"></div>
+                <div><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">First Batch</label><input type="text" id="as-batch" required class="input-sleek mt-1" placeholder="e.g. Math - Morning 7 AM"></div>
+                <div class="flex gap-4">
+                    <div class="flex-1"><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Classes</label><input type="number" id="as-total" required class="input-sleek mt-1" value="24"></div>
+                    <div class="flex-1"><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Fee (₹)</label><input type="number" id="as-fee" required class="input-sleek mt-1" placeholder="0"></div>
+                </div>
+                <button type="submit" class="bg-teal-dark text-white btn-pill w-full py-4 mt-6 shadow-lg shadow-teal-dark/30 text-lg">Save Profile</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT STUDENT -->
+    <div id="editStudentModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <div><h2 class="text-2xl font-extrabold text-teal-dark">Edit Profile</h2></div>
+                <button onclick="closeModal('editStudentModal')" class="bg-gray-100 p-2 rounded-full hover:bg-gray-200 text-gray-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <form onsubmit="submitEditStudent(event)" class="space-y-4">
+                <input type="hidden" id="es-studentId">
+                <div><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Student Name</label><input type="text" id="es-name" required class="input-sleek mt-1"></div>
+                <div><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Parent Name</label><input type="text" id="es-parent" required class="input-sleek mt-1"></div>
+                <div><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Phone Number</label><input type="text" id="es-phone" required class="input-sleek mt-1"></div>
+                <button type="submit" class="bg-teal-dark text-white btn-pill w-full py-4 mt-6 shadow-lg text-lg">Update Profile</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD PACKAGE -->
+    <div id="addPackageModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-extrabold text-teal-dark">Assign Batch</h2>
+                <button onclick="closeModal('addPackageModal')" class="bg-gray-100 p-2 rounded-full hover:bg-gray-200 text-gray-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <form onsubmit="submitAddPackage(event)" class="space-y-4">
+                <input type="hidden" id="ap-studentId">
+                <div><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Batch Name</label><input type="text" id="ap-batch" required class="input-sleek mt-1" placeholder="e.g. Science - Evening"></div>
+                <div class="flex gap-4">
+                    <div class="flex-1"><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Classes</label><input type="number" id="ap-total" required class="input-sleek mt-1" value="24"></div>
+                    <div class="flex-1"><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Fee (₹)</label><input type="number" id="ap-fee" required class="input-sleek mt-1"></div>
+                </div>
+                <button type="submit" class="bg-teal-dark text-white btn-pill w-full py-4 mt-6 shadow-lg text-lg">Add Batch</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT PACKAGE -->
+    <div id="editPackageModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-extrabold text-teal-dark">Edit Batch</h2>
+                <button onclick="closeModal('editPackageModal')" class="bg-gray-100 p-2 rounded-full hover:bg-gray-200 text-gray-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <form onsubmit="submitEditPackage(event)" class="space-y-4">
+                <input type="hidden" id="ep-packageId">
+                <div><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Batch Name</label><input type="text" id="ep-batch" required class="input-sleek mt-1"></div>
+                <div class="flex gap-4">
+                    <div class="flex-1"><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Classes</label><input type="number" id="ep-total" required class="input-sleek mt-1"></div>
+                    <div class="flex-1"><label class="text-xs font-bold text-gray-400 uppercase tracking-wider pl-2">Fee (₹)</label><input type="number" id="ep-fee" required class="input-sleek mt-1"></div>
+                </div>
+                <button type="submit" class="bg-teal-dark text-white btn-pill w-full py-4 mt-6 shadow-lg text-lg">Update Batch</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- API URL HERE ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbyBSi0CtiW1SfEhQ_P9yAXRd5CCLXc6B6I9I0P_HEZ2BlBA92yIu17eOv0h9N_avers3Q/exec"; 
+        
+        async function loadData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+            try {
+                const response = await fetch(`${API_URL}?action=getAllAdmin`);
+                const result = await response.json();
+                renderDashboard(result.data);
+            } catch (error) {
+                alert("Failed to sync. Check network.");
+            }
+        }
+
+        async function postData(payload) {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+            try {
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                loadData();
+            } catch(e) { alert("Action failed."); loadData(); }
+        }
+
+        function renderDashboard(families) {
+            const dashboard = document.getElementById('dashboard');
+            dashboard.innerHTML = '';
+
+            families.forEach(family => {
+                family.students.forEach(student => {
+                    const safeStudentName = student.StudentName.replace(/'/g, "&apos;");
+                    const safeParentName = family.ParentName.replace(/'/g, "&apos;");
+                    const phone = family.Phone;
+                    
+                    let html = `
+                        <div class="card-modern flex flex-col h-full border border-gray-100">
+                            <!-- Header (Student Profile) -->
+                            <div class="flex justify-between items-start mb-6 pb-4 border-b border-gray-100">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-full bg-peach-accent/20 text-peach-accent flex items-center justify-center font-bold text-xl">${student.StudentName.charAt(0)}</div>
+                                    <div>
+                                        <h3 class="font-extrabold text-xl text-teal-dark leading-tight">${student.StudentName}</h3>
+                                        <div class="flex gap-2 mt-1">
+                                            <span class="inline-block px-2 py-0.5 bg-gray-100 text-gray-500 rounded font-semibold text-[10px] uppercase tracking-widest">ID: ${student.StudentID}</span>
+                                            <span class="inline-block px-2 py-0.5 bg-teal-50 text-teal-600 rounded font-semibold text-[10px] tracking-widest">${family.ParentName}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button onclick="openEditStudent('${student.StudentID}', '${safeStudentName}', '${safeParentName}', '${phone}')" class="text-gray-400 hover:text-teal-dark p-2 bg-gray-50 rounded-full transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                                    <button onclick="deleteStudent('${student.StudentID}', '${safeStudentName}')" class="text-red-400 hover:text-red-600 p-2 bg-red-50 rounded-full transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                </div>
+                            </div>
+                            
+                            <!-- Batches Container -->
+                            <div class="space-y-4 flex-grow mb-6">
+                    `;
+                    
+                    if(student.packages.length === 0) html += `<div class="bg-gray-50 rounded-2xl p-6 text-center text-sm font-medium text-gray-400">No active batches.</div>`;
+
+                    student.packages.forEach(pkg => {
+                        const remaining = pkg.TotalClasses - pkg.ClassesUsed;
+                        const isDone = remaining <= 0;
+                        const percent = Math.min(100, Math.round((pkg.ClassesUsed / pkg.TotalClasses) * 100));
+                        const safePkg = JSON.stringify(pkg).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+                        
+                        html += `
+                                <div class="bg-[#F8FAFC] rounded-2xl p-4 border border-gray-100 relative group transition-all hover:border-gray-200 hover:shadow-sm">
+                                    <div class="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onclick='openEditPackage(${safePkg})' class="text-gray-400 hover:text-teal-dark p-1.5 bg-white rounded-lg shadow-sm border border-gray-100"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                                        <button onclick="deletePackage('${pkg.PackageID}', '${pkg.PackageName}')" class="text-gray-400 hover:text-red-500 p-1.5 bg-white rounded-lg shadow-sm border border-gray-100"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                    </div>
+                                    
+                                    <h4 class="font-bold text-gray-800 mb-1 pr-16 text-sm truncate">${pkg.PackageName}</h4>
+                                    
+                                    <div class="flex items-center gap-3 my-3">
+                                        <div class="w-10 h-10 rounded-full border-4 ${isDone ? 'border-red-500 text-red-600' : 'border-peach-accent text-teal-dark'} flex items-center justify-center font-bold text-sm bg-white shrink-0">
+                                            ${pkg.ClassesUsed}
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex justify-between text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wide">
+                                                <span class="${isDone ? 'text-red-500' : ''}">Progress</span>
+                                                <span class="${isDone ? 'text-red-500' : ''}">${pkg.ClassesUsed}/${pkg.TotalClasses}</span>
+                                            </div>
+                                            <div class="bar-track h-1.5">
+                                                <div class="bar-fill ${isDone ? 'bg-red-500' : 'bg-teal-dark'}" style="width: ${percent}%;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-2">
+                                        <!-- UNDO BUTTON -->
+                                        <button onclick="undoClass('${pkg.PackageID}')" ${pkg.ClassesUsed === 0 ? 'disabled' : ''} class="btn-pill px-3 bg-white border border-gray-200 text-gray-500 hover:text-red-500 hover:bg-red-50 hover:border-red-100 shadow-sm transition-colors" title="Undo last class">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                                        </button>
+                                        
+                                        <!-- LOG BUTTON -->
+                                        <button onclick="logClass('${pkg.PackageID}')" class="flex-grow btn-pill py-2.5 text-sm ${isDone ? 'bg-red-500 text-white hover:bg-red-600 shadow-md' : 'bg-teal-dark text-white hover:bg-[#122630] shadow-md'}">
+                                            ${isDone ? '+ Log Extra Class' : 'Mark Complete'}
+                                        </button>
+                                    </div>
+                                </div>
+                        `;
+                    });
+
+                    html += `
+                            </div>
+                            <button onclick="openAddPackage('${student.StudentID}')" class="w-full btn-pill py-3 text-sm font-semibold bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors border border-dashed border-gray-300">
+                                + Assign New Batch
+                            </button>
+                        </div>
+                    `;
+                    dashboard.innerHTML += html;
+                });
+            });
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'grid';
+        }
+
+        // --- Core Operations ---
+        function logClass(packageId) { postData({ action: 'logClass', packageId: packageId }); }
+        
+        function undoClass(packageId) {
+            if(confirm("Undo the last class logged? This restores 1 credit.")) {
+                postData({ action: 'undoClass', packageId: packageId });
+            }
+        }
+
+        function deleteStudent(studentId, name) {
+            if(confirm(`Delete ${name} and all associated data completely?`)) postData({ action: 'deleteStudent', studentId: studentId });
+        }
+
+        function deletePackage(packageId, name) {
+            if(confirm(`Remove the batch "${name}" from this student?`)) postData({ action: 'deletePackage', packageId: packageId });
+        }
+
+        // --- Modals ---
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        function submitAddStudent(e) {
+            e.preventDefault(); postData({
+                action: 'addStudent', studentName: document.getElementById('as-name').value, parentName: document.getElementById('as-parent').value, phone: document.getElementById('as-phone').value,
+                packageName: document.getElementById('as-batch').value, totalClasses: document.getElementById('as-total').value, fee: document.getElementById('as-fee').value
+            }); e.target.reset();
+        }
+
+        function openEditStudent(id, sName, pName, phone) {
+            document.getElementById('es-studentId').value = id; document.getElementById('es-name').value = sName;
+            document.getElementById('es-parent').value = pName; document.getElementById('es-phone').value = phone;
+            openModal('editStudentModal');
+        }
+        function submitEditStudent(e) {
+            e.preventDefault(); postData({
+                action: 'editStudent', studentId: document.getElementById('es-studentId').value, studentName: document.getElementById('es-name').value,
+                parentName: document.getElementById('es-parent').value, phone: document.getElementById('es-phone').value
+            });
+        }
+
+        function openAddPackage(studentId) { document.getElementById('ap-studentId').value = studentId; openModal('addPackageModal'); }
+        function submitAddPackage(e) {
+            e.preventDefault(); postData({
+                action: 'addPackage', studentId: document.getElementById('ap-studentId').value,
+                packageName: document.getElementById('ap-batch').value, totalClasses: document.getElementById('ap-total').value, fee: document.getElementById('ap-fee').value
+            }); e.target.reset();
+        }
+
+        function openEditPackage(pkg) {
+            document.getElementById('ep-packageId').value = pkg.PackageID; document.getElementById('ep-batch').value = pkg.PackageName;
+            document.getElementById('ep-total').value = pkg.TotalClasses; document.getElementById('ep-fee').value = pkg.Fee;
+            openModal('editPackageModal');
+        }
+        function submitEditPackage(e) {
+            e.preventDefault(); postData({
+                action: 'editPackage', packageId: document.getElementById('ep-packageId').value, packageName: document.getElementById('ep-batch').value,
+                totalClasses: document.getElementById('ep-total').value, fee: document.getElementById('ep-fee').value
+            });
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
