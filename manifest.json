@@ -1,7 +1,8 @@
 {
   "name": "TTC Online Ledger",
-  "short_name": "TTC Admin",
-  "start_url": "./",
+  "short_name": "TTC Online",
+  "start_url": "/TTC_Online_Admin/",
+  "scope": "/TTC_Online_Admin/",
   "display": "standalone",
   "background_color": "#E2E8F0",
   "theme_color": "#1A3644",
